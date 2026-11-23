@@ -2,7 +2,7 @@
 
 A production-oriented TypeScript application for secure Bybit P2P operations. It includes a React dashboard, Express API, PostgreSQL persistence, signed Bybit API support, authentication, audit tables, health checks, Docker deployment, and strict confirmation-oriented operation boundaries.
 
-## Safety model
+## Safety Model
 
 - Live P2P ad updates and automatic repricing are disabled at startup. An administrator must enable LIVE mode, then separately enable automatic repricing and opt in each advertisement.
 - A persistent emergency STOP blocks live ad updates. Restarting the server always disarms LIVE mode.
