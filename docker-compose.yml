@@ -1,0 +1,67 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: bybit_p2p
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD in .env}
+      BYBIT_APP_DB_PASSWORD: ${BYBIT_APP_DB_PASSWORD:?Set BYBIT_APP_DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/001-create-bybit-app.sh:/docker-entrypoint-initdb.d/001-create-bybit-app.sh:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bybit_p2p"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-4000}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5173}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      BYBIT_API_KEY: ${BYBIT_API_KEY:-}
+      BYBIT_API_SECRET: ${BYBIT_API_SECRET:-}
+      BYBIT_BASE_URL: ${BYBIT_BASE_URL:-}
+      BYBIT_TESTNET: ${BYBIT_TESTNET:-false}
+      REDIS_URL: ${REDIS_URL:-}
+      REDIS_MARKET_DATA_TTL_SEC: ${REDIS_MARKET_DATA_TTL_SEC:-5}
+      P2P_AUTO_SCAN: ${P2P_AUTO_SCAN:-true}
+      P2P_SCAN_INTERVAL_MS: ${P2P_SCAN_INTERVAL_MS:-5000}
+      P2P_LARGE_CHANGE_THRESHOLD_NGN: ${P2P_LARGE_CHANGE_THRESHOLD_NGN:-600}
+      P2P_MINIMUM_UPDATE_INTERVAL_MS: ${P2P_MINIMUM_UPDATE_INTERVAL_MS:-60000}
+      P2P_MAX_UPDATES_PER_AD_PER_MINUTE: ${P2P_MAX_UPDATES_PER_AD_PER_MINUTE:-1}
+      P2P_MAX_UPDATES_PER_DAY: ${P2P_MAX_UPDATES_PER_DAY:-100}
+      P2P_MAX_MARKET_DATA_AGE_MS: ${P2P_MAX_MARKET_DATA_AGE_MS:-15000}
+      P2P_REFERENCE_MAX_AGE_DAYS: ${P2P_REFERENCE_MAX_AGE_DAYS:-30}
+      P2P_LIVE_MIN_PRICE_NGN: ${P2P_LIVE_MIN_PRICE_NGN:-}
+      P2P_LIVE_MAX_PRICE_NGN: ${P2P_LIVE_MAX_PRICE_NGN:-}
+      P2P_LIVE_MAX_CHANGE_NGN: ${P2P_LIVE_MAX_CHANGE_NGN:-600}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+volumes:
+  postgres_data:

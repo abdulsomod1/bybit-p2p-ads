@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'SQL'
+\getenv app_password BYBIT_APP_DB_PASSWORD
+CREATE ROLE bybit_app
+  LOGIN
+  NOSUPERUSER
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  NOBYPASSRLS
+  PASSWORD :'app_password';
+GRANT CONNECT ON DATABASE bybit_p2p TO bybit_app;
+GRANT USAGE, CREATE ON SCHEMA public TO bybit_app;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+SQL
