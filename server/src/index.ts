@@ -586,11 +586,14 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  const errorName = error instanceof Error ? error.name : "UnknownError";
-  const errorCode = error && typeof error === "object" && "code" in error
-    && typeof error.code === "string"
-    ? error.code
-    : undefined;
-  logger.fatal(errorCode ? { errorName, errorCode } : { errorName }, "Startup failed");
+  logger.fatal({
+    errorName: error instanceof Error ? error.name : "UnknownError",
+    errorMessage: error instanceof Error ? error.message : String(error),
+    errorCode: error && typeof error === "object" && "code" in error
+      ? error.code
+      : undefined,
+    stack: error instanceof Error ? error.stack : undefined,
+  }, "Startup failed");
+
   process.exit(1);
 });
